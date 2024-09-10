@@ -1,0 +1,29 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 600px;
+}
+
+.jumbotron {
+    background: url('path-to-your-background-image.jpg') no-repeat center center;
+    
+    
+    background-size: cover;
+    color: white;
+    padding: 2rem;
+}
+
+.navbar {
+    background-color: #3a5a40;
+}
+
+.navbar-brand {
+    color: white;
+    font-weight: bold;
+}
+
+.navbar-nav .nav-link {
+    color: white;
+}

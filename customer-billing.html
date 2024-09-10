@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, rgb(229, 231, 225), #84b4dc);
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #0008ff;
+            color: #fff;
+            font-weight: bold;
+            text-align: center;
+        }
+        .btn-add {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-remove {
+            background-color: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-file-invoice"></i> Billing
+        </div>
+        <div class="card-body">
+            <!-- Customer Details -->
+            <div class="form-group">
+                <label for="customerName">Customer Name</label>
+                <input type="text" id="customerName" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="customerAddress">Customer Address</label>
+                <input type="text" id="customerAddress" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="billingDate">Billing Date</label>
+                <input type="date" id="billingDate" class="form-control">
+            </div>
+
+            <!-- Product Details -->
+            <table class="table mt-4">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Product</th>
+                        <th scope="col">Batch Number</th>
+                        <th scope="col">Expiry Date</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Price (₹)</th>
+                        <th scope="col">GST (₹)</th>
+                        <th scope="col">Total (₹)</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productRows">
+                    <!-- Product rows will be dynamically added here -->
+                </tbody>
+            </table>
+
+            <!-- Add Product Button -->
+            <button type="button" class="btn btn-add" onclick="addProductRow()">Add Product</button>
+
+            <!-- Total and Submit -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5>Total Amount: ₹<span id="totalAmount">0</span></h5>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button class="btn btn-success" onclick="submitBill()">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const products = {
+        'Paracetamol': { batch: 'B1234', expiry: '12/2025', price: 10 },
+        'Ibuprofen': { batch: 'B5678', expiry: '08/2026', price: 15 },
+        'Amoxicillin': { batch: 'B9876', expiry: '03/2024', price: 20 },
+    };
+
+    const GST_RATE = 0.18; // 18% GST rate
+
+    function addProductRow() {
+        const rowId = Date.now();
+        const row = `
+            <tr id="row-${rowId}">
+                <td>
+                    <select class="form-control" onchange="populateDetails(${rowId})">
+                        <option value="">Select Product</option>
+                        ${Object.keys(products).map(product => `<option value="${product}">${product}</option>`).join('')}
+                    </select>
+                </td>
+                <td><input type="text" class="form-control" id="batch-${rowId}" readonly></td>
+                <td><input type="text" class="form-control" id="expiry-${rowId}" readonly></td>
+                <td><input type="number" class="form-control" id="quantity-${rowId}" value="1" onchange="updatePrice(${rowId})"></td>
+                <td><input type="text" class="form-control" id="price-${rowId}" readonly></td>
+                <td><input type="text" class="form-control" id="gst-${rowId}" readonly></td>
+                <td><input type="text" class="form-control" id="total-${rowId}" readonly></td>
+                <td><button type="button" class="btn btn-remove" onclick="removeProductRow(${rowId})">Remove</button></td>
+            </tr>
+        `;
+        document.getElementById('productRows').insertAdjacentHTML('beforeend', row);
+    }
+
+    function populateDetails(rowId) {
+        const product = document.querySelector(`#row-${rowId} select`).value;
+        if (product && products[product]) {
+            document.getElementById(`batch-${rowId}`).value = products[product].batch;
+            document.getElementById(`expiry-${rowId}`).value = products[product].expiry;
+            updatePrice(rowId);
+        }
+    }
+
+    function updatePrice(rowId) {
+        const product = document.querySelector(`#row-${rowId} select`).value;
+        if (product && products[product]) {
+            const quantity = document.getElementById(`quantity-${rowId}`).value;
+            const price = products[product].price * quantity;
+            const gst = price * GST_RATE;
+            const total = price + gst;
+            document.getElementById(`price-${rowId}`).value = price.toFixed(2);
+            document.getElementById(`gst-${rowId}`).value = gst.toFixed(2);
+            document.getElementById(`total-${rowId}`).value = total.toFixed(2);
+            updateTotal();
+        }
+    }
+
+    function removeProductRow(rowId) {
+        document.getElementById(`row-${rowId}`).remove();
+        updateTotal();
+    }
+
+    function updateTotal() {
+        let total = 0;
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const rowTotal = parseFloat(row.querySelector('input[id^="total"]').value) || 0;
+            total += rowTotal;
+        });
+        document.getElementById('totalAmount').textContent = total.toFixed(2);
+    }
+
+    function submitBill() {
+        const customerName = document.getElementById('customerName').value;
+        const customerAddress = document.getElementById('customerAddress').value;
+        const billingDate = document.getElementById('billingDate').value;
+
+        const productsData = [];
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const product = row.querySelector('select').value;
+            const batch = row.querySelector('input[id^="batch"]').value;
+            const expiry = row.querySelector('input[id^="expiry"]').value;
+            const quantity = row.querySelector('input[id^="quantity"]').value;
+            const price = row.querySelector('input[id^="price"]').value;
+            const gst = row.querySelector('input[id^="gst"]').value;
+            const total = row.querySelector('input[id^="total"]').value;
+            productsData.push({ product, batch, expiry, quantity, price, gst, total });
+        });
+
+        const billData = {
+            customerName,
+            customerAddress,
+            billingDate,
+            products: productsData,
+            totalAmount: document.getElementById('totalAmount').textContent
+        };
+
+        localStorage.setItem('billData', JSON.stringify(billData));
+        window.location.href = 'billing-summary.html';
+    }
+</script>
+
+</body>
+</html>
